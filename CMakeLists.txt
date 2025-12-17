@@ -17,7 +17,10 @@ add_executable(doorctl
         src/device.h
         src/error.h
         src/error.c
+        src/crypto.c
+        src/crypto.h
+        src/pka.in.h
 )
-target_link_libraries(doorctl pico_stdlib)
+target_link_libraries(doorctl pico_stdlib pico_mbedtls)
 
 pico_add_extra_outputs(doorctl)
