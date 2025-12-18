@@ -1,0 +1,35 @@
+name: Deploy API to Lambda
+on:
+  push:
+    branches: [ "main" ]
+permissions:
+  contents: read
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install Dependencies
+        run: for D in api/*; do [ -d "${D}" ] && cd "$D" && npm ci; done
+
+      - name: Archive Functions
+        run: |
+          mkdir -p dist/api
+          for D in api/*; do [ -d "${D}" ] && (cd "$D" && zip -r "../../dist/${D}.zip" .); done
+
+      - name: Deploy Functions
+        run: |
+          cd dist/api
+          for A in *.zip; do aws lambda update-function-code --function-name "${{ secrets.API_LAMBDA_PREFIX }}${A%.zip}" --zip-file fileb://"$A"; done
