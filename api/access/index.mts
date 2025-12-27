@@ -6,50 +6,55 @@ import {
 interface LambdaEvent {
   requestContext: {
     identity: {
-      'cognito:groups': string[],
+      'cognito:groups'?: string[],
     },
   },
 }
 
-export const handler = async (event: LambdaEvent) => {
-  const client = new KMSClient();
+interface ResponseBody {
+  error?: string,
+  token?: string,
+}
 
-  const keyName = process.env.SIGN_KEY_ALIAS;
-  if (!keyName) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'No key name is configured for signing.' }),
-    };
-  }
-
-  const identity = event.requestContext.identity;
-  const isResident = identity["cognito:groups"].includes('Resident');
-  if (!isResident) {
-    return {
-      statusCode: 403,
-      body: JSON.stringify({ error: 'User is unauthorized to perform action.' }),
-    };
-  }
-
-  const command = `authorized@${Date.now()}`;
-  const { Signature: signature } = await client.send(new SignCommand({
-    KeyId: `alias/${keyName}`,
-    Message: Buffer.from(command, 'ascii'),
-    SigningAlgorithm: 'ECDSA_SHA_256',
-  }));
-
-  if (!signature) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to sign.' }),
-    };
-  }
-
+const response = (code: number, body: ResponseBody) => {
   return {
-    statusCode: 200,
-    body: JSON.stringify({
-      command,
-      signature: Buffer.from(signature).toString('base64'),
-    }),
+    statusCode: code,
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
   };
+};
+
+export const handler = async (event: LambdaEvent) => {
+  try {
+    const client = new KMSClient();
+
+    const keyName = process.env.SIGN_KEY_ALIAS;
+    if (!keyName) {
+      return response(500, { error: 'No key name configured for signing.' });
+    }
+
+    const identity = event.requestContext.identity;
+    const isResident = identity["cognito:groups"]?.includes('Resident');
+    if (!isResident) {
+      return response(503, { error: 'User is unauthorized to perform action.' });
+    }
+
+    const command = `authorized@${Date.now()}`;
+    const { Signature: signature } = await client.send(new SignCommand({
+      KeyId: `alias/${keyName}`,
+      Message: Buffer.from(command, 'ascii'),
+      SigningAlgorithm: 'ECDSA_SHA_256',
+    }));
+
+    if (!signature) {
+      return response(503, { error: 'Failed to get signature from KMS.' });
+    }
+
+    return response(200, { token: `${command}@${Buffer.from(signature).toString('base64')}` });
+  } catch (_) {
+    return response(500, { error: 'Encountered unknown error.' });
+  }
 };

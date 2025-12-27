@@ -29,6 +29,8 @@ import {LazyStore} from "@tauri-apps/plugin-store";
 
 import CircleButton from "./component/CircleButton.vue";
 
+const store = new LazyStore("auth.json");
+
 const token = ref<string | null>(null);
 const identity = computed(() => {
   if (!token.value) return null;
@@ -52,13 +54,17 @@ const isReady = computed(() => {
 
 const isLocked = ref<boolean>(false);
 
-onMounted(async () => {
-  const store = new LazyStore("auth.json");
+const doorAuthorizationToken = ref<string | null>(null);
+
+async function doAuthFlow(): Promise<boolean> {
   token.value = await store.get<string>("token") || null;
 
-  if (isLoggedIn.value) return;
+  // We loaded a valid token from store.
+  if (isLoggedIn.value) {
+    return true;
+  }
 
-  // Check if callback from deeplink
+  // Else check if this is an auth callback.
   const startUrls = await getCurrent();
   if (startUrls) {
     for (const raw of startUrls) {
@@ -80,16 +86,15 @@ onMounted(async () => {
           const payload = await response.json();
 
           await store.set("token", payload.id_token);
-          token.value = payload.id_token;
+          location.href = "/";
+
+          return true;
         } else {
           console.error(response);
-
         }
       }
     }
-  }
-
-  if (!isLoggedIn.value) {
+  } else { // Else start the auth process.
     const loginUrl = buildLoginUrl({
       authority: import.meta.env.VITE_AUTH_AUTHORITY,
       clientId: import.meta.env.VITE_AUTH_CLIENT_ID,
@@ -99,6 +104,37 @@ onMounted(async () => {
     });
     await openUrl(loginUrl);
   }
+
+  return false;
+}
+
+async function refreshDoorAuthorizationToken() {
+  if (await doAuthFlow()) {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/v1/access`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token.value}`,
+        },
+      });
+
+      if (response.ok) {
+        const payload = await response.json();
+        doorAuthorizationToken.value = payload.token;
+        console.log(payload.token);
+      } else {
+        throw "Failed to retrieve authorization token!";
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  setTimeout(refreshDoorAuthorizationToken, 5000);
+}
+
+onMounted(() => {
+  refreshDoorAuthorizationToken();
 });
 </script>
 
