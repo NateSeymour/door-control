@@ -5,8 +5,10 @@ import {
 
 interface LambdaEvent {
   requestContext: {
-    identity: {
-      'cognito:groups'?: string[],
+    authorizer: {
+      claims: {
+        'cognito:groups'?: string[],
+      },
     },
   },
 }
@@ -36,8 +38,8 @@ export const handler = async (event: LambdaEvent) => {
       return response(500, { error: 'No key name configured for signing.' });
     }
 
-    const identity = event.requestContext.identity;
-    const isResident = identity["cognito:groups"]?.includes('Resident');
+    const claims = event.requestContext.authorizer.claims;
+    const isResident = claims["cognito:groups"]?.includes('Resident');
     if (!isResident) {
       return response(403, { error: 'User is unauthorized to perform action.' });
     }
