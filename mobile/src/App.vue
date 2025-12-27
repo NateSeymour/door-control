@@ -8,7 +8,7 @@
           class="button"
           :label="isLocked ? 'Locked' : 'Unlocked'"
           :color="isLocked ? 'green' : 'red'"
-          @click="isLocked = !isLocked"
+          @click="sendDoorCommand"
       />
     </div>
     <div v-else class="loading">
@@ -46,15 +46,22 @@ const identity = computed(() => {
 });
 
 const isLoggedIn = computed(() => !!identity.value);
-const isConnected = ref<boolean>(false);
+const isConnected = ref<boolean>(true);
+const doorAuthorizationToken = ref<string | null>(null);
 
 const isReady = computed(() => {
-  return isLoggedIn.value && isConnected.value;
+  return isLoggedIn.value && isConnected.value && doorAuthorizationToken.value;
 });
 
 const isLocked = ref<boolean>(false);
 
-const doorAuthorizationToken = ref<string | null>(null);
+async function sendDoorCommand() {
+  // Send to BLE device
+  isLocked.value = !isLocked.value;
+
+  doorAuthorizationToken.value = null;
+  refreshDoorAuthorizationToken();
+}
 
 async function doAuthFlow(): Promise<boolean> {
   token.value = await store.get<string>("token") || null;
@@ -129,8 +136,6 @@ async function refreshDoorAuthorizationToken() {
       console.error(e);
     }
   }
-
-  setTimeout(refreshDoorAuthorizationToken, 5000);
 }
 
 onMounted(() => {
