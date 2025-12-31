@@ -16,7 +16,9 @@
     </div>
   </main>
   <footer>
-    <div>Connection Status: {{ isConnected ? "Connected" : "Not Connected" }}</div>
+    <div class="status">
+
+    </div>
   </footer>
 </template>
 

@@ -32,7 +32,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Rust cache
+      - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './mobile/src-tauri -> target'
@@ -41,24 +41,11 @@ jobs:
         run: npm ci
         working-directory: mobile
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+      - name: Build APKs
+        run: npm run tauri android build
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      # 'mobile' is only available on dev branch currently (!!!)
-      - uses: tauri-apps/tauri-action@dev
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: ${{ github.ref_name }}
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
-          projectPath: './mobile'
-          mobile: 'android'
+          files: ./mobile/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk
+          generate_release_notes: true
