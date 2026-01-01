@@ -1,4 +1,6 @@
-#include <stdio.h>
+#include <stdint.h>
+#include "btstack.h"
+#include "pico/btstack_cyw43.h"
 #include "pico/stdlib.h"
 #include "driver.h"
 #include "device.h"
@@ -35,4 +37,12 @@ int main(void)
     {
         error_fatal(&e);
     }
+
+    // Enable BLE
+    btstack_memory_init();
+
+    l2cap_init();
+    sm_init();
+
+    btstack_run_loop_execute();
 }

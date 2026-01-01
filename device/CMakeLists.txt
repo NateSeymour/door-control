@@ -20,7 +20,17 @@ add_executable(doorctl
         src/crypto.c
         src/crypto.h
         src/pka.in.h
+        src/mbedtls_config.h
+        src/btstack_config.h
 )
-target_link_libraries(doorctl pico_stdlib pico_mbedtls)
+target_link_libraries(doorctl
+        pico_stdlib
+        pico_async_context_threadsafe_background
+        pico_mbedtls
+        pico_btstack_ble
+        pico_cyw43_driver
+        pico_btstack_cyw43
+)
+target_include_directories(doorctl PUBLIC src)
 
 pico_add_extra_outputs(doorctl)
