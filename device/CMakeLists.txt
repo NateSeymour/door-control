@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 4.0)
 
 set(PICO_SDK_FETCH_FROM_GIT ON)
+set(PICO_BOARD pico_w)
 include(cmake/pico.cmake)
 
 project(doorctl C CXX ASM)
@@ -26,11 +27,12 @@ add_executable(doorctl
 target_link_libraries(doorctl
         pico_stdlib
         pico_async_context_threadsafe_background
-        pico_mbedtls
         pico_btstack_ble
-        pico_cyw43_driver
         pico_btstack_cyw43
+        pico_cyw43_arch_none
+        pico_mbedtls
 )
 target_include_directories(doorctl PUBLIC src)
+pico_btstack_make_gatt_header(doorctl PUBLIC ${CMAKE_SOURCE_DIR}/src/doorctl.gatt)
 
 pico_add_extra_outputs(doorctl)
