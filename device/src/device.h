@@ -4,10 +4,15 @@
 #include <stdint.h>
 #include "pico/stdlib.h"
 
+#define DOORCTL_MAX_CONCURRENT_CONNECTIONS 3
+#define DOORCTL_AUTHORIZATION_TOKEN_LENGTH 256
+
 typedef struct
 {
     bool ble_initialized;
     bool driver_initialized;
+
+    uint64_t last_command_authorization;
 } device_state_t;
 
 typedef enum

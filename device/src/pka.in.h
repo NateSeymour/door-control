@@ -1,8 +1,6 @@
 #ifndef DOORCTL_PKA_IN_H
 #define DOORCTL_PKA_IN_H
 
-#include <stdint.h>
-
-uint8_t const k_pka_signing_public[] = {};
+inline char const *k_pka_signing_public = "@DOORCTL_PKA_SIGNING_PUBLIC@";
 
 #endif //DOORCTL_PKA_IN_H

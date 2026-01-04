@@ -10,6 +10,8 @@ pico_sdk_init()
 
 set(CMAKE_C_STANDARD 23)
 
+configure_file(src/pka.in.h generated/pka.h)
+
 add_executable(doorctl
         src/main.c
         src/driver.c
@@ -26,6 +28,7 @@ add_executable(doorctl
         src/ble.c
         src/ble.h
         src/lwipopts.h
+        src/math.h
 )
 target_link_libraries(doorctl
         pico_stdlib
@@ -35,7 +38,7 @@ target_link_libraries(doorctl
         pico_cyw43_arch_none
         pico_mbedtls
 )
-target_include_directories(doorctl PUBLIC src)
+target_include_directories(doorctl PUBLIC src ${CMAKE_BINARY_DIR})
 pico_btstack_make_gatt_header(doorctl PUBLIC ${CMAKE_SOURCE_DIR}/src/doorctl.gatt)
 
 pico_add_extra_outputs(doorctl)

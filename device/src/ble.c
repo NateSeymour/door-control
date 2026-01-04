@@ -5,12 +5,15 @@
 #include "ble.h"
 #include <stdint.h>
 #include "btstack.h"
+#include "crypto.h"
 #include "pico/btstack_cyw43.h"
 #include "doorctl.h"
 #include "pico/cyw43_arch.h"
 #include "device.h"
+#include "math.h"
 
-static int le_notification_enabled;
+#define ATT_CHARACTERISTIC_AUTHORIZATION_TOKEN ATT_CHARACTERISTIC_5a605272_fee8_43f6_bde6_8588bd0b857f_01_VALUE_HANDLE
+
 static btstack_packet_callback_registration_t hci_event_handler;
 static hci_con_handle_t hci_con_handle;
 
@@ -20,11 +23,49 @@ constexpr uint8_t advertisement_data[] = {
 };
 constexpr uint8_t adv_data_len = sizeof(advertisement_data);
 
-static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size) {}
+static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size)
+{
+    if (packet_type != HCI_EVENT_PACKET) return;
+
+    switch (hci_event_packet_get_type(packet))
+    {
+    case HCI_EVENT_DISCONNECTION_COMPLETE:
+    case ATT_EVENT_CAN_SEND_NOW:
+    case ATT_EVENT_DISCONNECTED:
+        default:
+        {
+            break;
+        }
+    }
+}
 
 static uint16_t att_read_callback(hci_con_handle_t con_handle, uint16_t att_handle, uint16_t offset, uint8_t * buffer, uint16_t buffer_size) {}
 
-static int att_write_callback(hci_con_handle_t con_handle, uint16_t att_handle, uint16_t transaction_mode, uint16_t offset, uint8_t *buffer, uint16_t buffer_size) {}
+static int att_write_callback(hci_con_handle_t con_handle, uint16_t att_handle, uint16_t transaction_mode, uint16_t offset, uint8_t *buffer, uint16_t buffer_size)
+{
+    error_t error = error_ok;
+
+    switch (att_handle)
+    {
+        case ATT_CHARACTERISTIC_AUTHORIZATION_TOKEN:
+        {
+            char authorization_token[DOORCTL_AUTHORIZATION_TOKEN_LENGTH] = {0};
+            memcpy(authorization_token, buffer, min(sizeof(authorization_token), buffer_size));
+
+            error = crypto_verify_authorization_token(authorization_token, sizeof(authorization_token));
+            if (!error_thrown(&error))
+            {
+                // TODO: open door
+            }
+            break;
+        }
+
+        default:
+        {
+            break;
+        }
+    }
+}
 
 error_t ble_init()
 {

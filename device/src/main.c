@@ -6,6 +6,15 @@
 #include "driver.h"
 #include "device.h"
 #include "ble.h"
+#include "crypto.h"
+
+[[noreturn]] void spin()
+{
+    while (true)
+    {
+        sleep_until(at_the_end_of_time);
+    }
+}
 
 /**
  * Manages the fatal error state of the MCU.
@@ -19,8 +28,7 @@
         // Thus can only sleep.
         if (!g_device_state.ble_initialized)
         {
-            sleep_until(at_the_end_of_time);
-            continue;
+            spin();
         }
 
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
@@ -53,8 +61,12 @@ void initialize_component(error_t (*init_fn)(void))
     irq_set_enabled(IRQ_ERROR_FATAL, true);
 
     // Initialize components
-    initialize_component(ble_init);
+    initialize_component(crypto_init);
     initialize_component(driver_init);
+    initialize_component(ble_init);
 
     btstack_run_loop_execute();
+
+    // Dead code because btstack does not return, but is not marked [[noreturn]]
+    spin();
 }
