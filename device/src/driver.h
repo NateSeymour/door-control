@@ -12,6 +12,22 @@ typedef struct
 
 extern driver_state_t g_driver_state;
 
+typedef enum : int8_t
+{
+    LEFT = -1,
+    RIGHT = 1,
+} driver_direction_t;
+
+typedef enum
+{
+    OFF,
+    ON,
+} driver_power_state_t;
+
+constexpr uint8_t k_driver_pin_map[] = {
+
+};
+
 /**
  * Driver follows an 8 step motor driving pattern.
  * The pattern controls four outputs (BLUE - 1, PINK - 2, YELLOW - 3, ORANGE - 4).
@@ -27,16 +43,18 @@ constexpr uint8_t k_driver_steps[] = {
     0b1000,
     0b1001,
 };
-
 constexpr uint8_t k_driver_step_count = 8;
 
+constexpr uint32_t k_driver_steps_per_degree = 1000; // TODO: correct value
+
+error_t driver_set_power(driver_power_state_t power_state);
+
 /**
- * Initializes the motor driver by completing one forward-reverse step run to ensure motor is aligned with step.
+ * Step the motor in the desired direction. Updates g_driver_state global struct.
+ * @param direction LEFT or RIGHT.
  * @return Error.
  */
-error_t driver_init();
-
-error_t driver_step(int8_t direction);
+error_t driver_step(driver_direction_t direction);
 
 /**
  * Discovers the current angle of the motor.
@@ -45,5 +63,11 @@ error_t driver_step(int8_t direction);
  * @return Error.
  */
 error_t driver_autosense_angle(bool update_global, float *out_angle);
+
+/**
+ * Initializes the motor driver by completing one forward-reverse step run to ensure motor is aligned with step.
+ * @return Error.
+ */
+error_t driver_init();
 
 #endif //DOORCTL_DRIVER_H
