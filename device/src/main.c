@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "pico/async_context.h"
 #include "pico/cyw43_arch.h"
+#include "pico/time.h"
 #include "btstack.h"
 #include "driver.h"
 #include "device.h"
@@ -12,7 +13,7 @@
 {
     while (true)
     {
-        sleep_until(at_the_end_of_time);
+        busy_wait_until(at_the_end_of_time);
     }
 }
 
@@ -32,14 +33,14 @@
         }
 
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
-        sleep_ms(5000);
+        busy_wait_ms(5000);
 
         for(error_code_t i = error_last_fatal.code; i > 0; i--)
         {
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false);
-            sleep_ms(1000);
+            busy_wait_ms(1000);
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
-            sleep_ms(500);
+            busy_wait_ms(500);
         }
     }
 }
@@ -61,7 +62,7 @@ void initialize_component(error_t (*init_fn)(void))
     irq_set_enabled(IRQ_ERROR_FATAL, true);
 
     // Initialize components
-    initialize_component(crypto_init);
+    //initialize_component(crypto_init);
     initialize_component(driver_init);
     initialize_component(ble_init);
 
