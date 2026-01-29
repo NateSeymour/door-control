@@ -10,6 +10,8 @@ pico_sdk_init()
 
 set(CMAKE_C_STANDARD 23)
 
+file(READ pkey.pem DOORCTL_PKA_SIGNING_PUBLIC)
+string(REPLACE "\n" "\\n" DOORCTL_PKA_SIGNING_PUBLIC ${DOORCTL_PKA_SIGNING_PUBLIC})
 configure_file(src/pka.in.h generated/pka.h)
 
 add_executable(doorctl
